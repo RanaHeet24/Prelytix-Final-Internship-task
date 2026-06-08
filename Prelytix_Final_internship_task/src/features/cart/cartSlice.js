@@ -1,5 +1,6 @@
 import { createSlice, createSelector } from '@reduxjs/toolkit';
 import { loadCartState } from '../../services/localStorage';
+import { calculateCheckoutSummary } from '../../utils/discountCalculator';
 
 const persistedState = loadCartState();
 
@@ -107,21 +108,12 @@ export const selectCartCalculations = createSelector(
     (state) => state.cart.shippingCost, 
     (state) => state.cart.taxRate
   ],
-  (items, discountRate, shippingCost, taxRate) => {
-    const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const discountAmount = subtotal * discountRate;
-    const taxableAmount = subtotal - discountAmount;
-    const tax = taxableAmount * taxRate;
-    const shipping = subtotal > 0 && taxableAmount > 150 ? 0 : (subtotal > 0 ? shippingCost : 0);
-    const total = taxableAmount + tax + shipping;
-
-    return {
-      subtotal,
-      discountAmount,
-      tax,
-      shipping,
-      total
-    };
+  (items, promoDiscountRate, shippingCost, taxRate) => {
+    return calculateCheckoutSummary(items, {
+      promoDiscountRate,
+      shippingCost,
+      taxRate
+    });
   }
 );
 

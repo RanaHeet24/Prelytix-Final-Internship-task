@@ -143,13 +143,13 @@ export default function CartPage() {
                 {/* Price display */}
                 <div className="text-right sm:min-w-[80px]">
                   <span className="text-xs text-slate-500 block">Unit Price</span>
-                  <span className="font-bold text-slate-100">${item.price.toFixed(2)}</span>
+                  <span className="font-bold text-slate-100">₹{item.price.toFixed(2)}</span>
                 </div>
 
                 {/* Total Price */}
                 <div className="text-right sm:min-w-[90px]">
                   <span className="text-xs text-slate-500 block">Total</span>
-                  <span className="font-extrabold text-indigo-400">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-extrabold text-indigo-400">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
 
                 {/* Remove button */}
@@ -175,34 +175,48 @@ export default function CartPage() {
             <div className="space-y-3.5 text-sm">
               <div className="flex justify-between text-slate-400">
                 <span>Subtotal</span>
-                <span className="font-medium text-slate-200">${calculations.subtotal.toFixed(2)}</span>
+                <span className="font-medium text-slate-200">₹{calculations.subtotal.toFixed(2)}</span>
               </div>
 
-              {activePromo && (
+              {calculations.productDiscount > 0 && (
+                <div className="flex justify-between text-indigo-300">
+                  <span>Product Discount (Rule 1)</span>
+                  <span>-₹{calculations.productDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {calculations.cartDiscount > 0 && (
+                <div className="flex justify-between text-indigo-400">
+                  <span>Cart Discount (Rule 2)</span>
+                  <span>-₹{calculations.cartDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {calculations.promoDiscountAmount > 0 && (
                 <div className="flex justify-between text-emerald-400">
                   <span className="flex items-center gap-1.5">
                     <Ticket className="w-3.5 h-3.5" />
-                    Discount ({(discountRate * 100)}%)
+                    Promo Discount ({(discountRate * 100)}%)
                   </span>
-                  <span>-${calculations.discountAmount.toFixed(2)}</span>
+                  <span>-₹{calculations.promoDiscountAmount.toFixed(2)}</span>
                 </div>
               )}
 
               <div className="flex justify-between text-slate-400">
                 <span>Est. Tax (8%)</span>
-                <span className="font-medium text-slate-200">${calculations.tax.toFixed(2)}</span>
+                <span className="font-medium text-slate-200">₹{calculations.tax.toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between text-slate-400">
                 <span>Shipping</span>
                 <span className="font-medium text-slate-200">
-                  {calculations.shipping === 0 ? 'FREE' : `$${calculations.shipping.toFixed(2)}`}
+                  {calculations.shipping === 0 ? 'FREE' : `₹${calculations.shipping.toFixed(2)}`}
                 </span>
               </div>
 
               <div className="border-t border-white/5 pt-4 flex justify-between text-base font-extrabold text-white">
                 <span>Grand Total</span>
-                <span className="text-xl text-indigo-400">${calculations.total.toFixed(2)}</span>
+                <span className="text-xl text-indigo-400">₹{calculations.total.toFixed(2)}</span>
               </div>
             </div>
 

@@ -157,7 +157,7 @@ export default function ProductsPage() {
                 <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest block">Price</span>
-                    <span className="text-base font-extrabold text-white">${product.price.toFixed(2)}</span>
+                    <span className="text-base font-extrabold text-white">₹{product.price.toFixed(2)}</span>
                   </div>
                   <Button 
                     size="sm" 
