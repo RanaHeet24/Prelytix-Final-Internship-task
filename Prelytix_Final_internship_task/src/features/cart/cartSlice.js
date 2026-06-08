@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createSelector } from '@reduxjs/toolkit';
 import { loadCartState } from '../../services/localStorage';
 
 const persistedState = loadCartState();
@@ -100,21 +100,29 @@ export const selectCartSubtotal = (state) =>
 export const selectCartTotalQuantity = (state) => 
   state.cart.items.reduce((total, item) => total + item.quantity, 0);
 
-export const selectCartCalculations = (state) => {
-  const subtotal = state.cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
-  const discountAmount = subtotal * state.cart.discount;
-  const taxableAmount = subtotal - discountAmount;
-  const tax = taxableAmount * state.cart.taxRate;
-  const shipping = subtotal > 0 && taxableAmount > 150 ? 0 : (subtotal > 0 ? state.cart.shippingCost : 0);
-  const total = taxableAmount + tax + shipping;
+export const selectCartCalculations = createSelector(
+  [
+    selectCartItems, 
+    selectCartDiscount, 
+    (state) => state.cart.shippingCost, 
+    (state) => state.cart.taxRate
+  ],
+  (items, discountRate, shippingCost, taxRate) => {
+    const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const discountAmount = subtotal * discountRate;
+    const taxableAmount = subtotal - discountAmount;
+    const tax = taxableAmount * taxRate;
+    const shipping = subtotal > 0 && taxableAmount > 150 ? 0 : (subtotal > 0 ? shippingCost : 0);
+    const total = taxableAmount + tax + shipping;
 
-  return {
-    subtotal,
-    discountAmount,
-    tax,
-    shipping,
-    total
-  };
-};
+    return {
+      subtotal,
+      discountAmount,
+      tax,
+      shipping,
+      total
+    };
+  }
+);
 
 export default cartSlice.reducer;
