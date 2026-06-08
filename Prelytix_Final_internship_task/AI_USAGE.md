@@ -7,6 +7,8 @@ This document records the utilization of AI tools, generated code templates, and
 ## 🛠️ AI Tools Used
 - **Antigravity (Google DeepMind)**: Used for architecture generation, state-slice boilerplate scaffolding, pure functional mathematical calculators, custom React hooks, and general stylesheet adjustments.
 
+- **Stitch** : For the Good and premuim UI / UX and for the better user interaction and user experience.
+
 ---
 
 ## 🎯 Purpose of Usage
@@ -33,3 +35,8 @@ This document records the utilization of AI tools, generated code templates, and
 ### 3. Custom Debounce Hook (`src/hooks/useDebounce.js`)
 - **Initial Generation**: Standard timeout handler.
 - **Modifications**: Ensured clean cleanup of timeouts upon component unmounting or input modifications, preventing memory leaks and unnecessary component updates.
+
+### 4. Product Details Modal & Extended Metadata
+- **Initial Generation**: Basic popup structure with image and title mappings.
+- **Modifications**: Added dynamic properties for catalog items (overview description, list specs, visual indicators, ESC listeners, scroll freeze, and "Why Buy This Product?" dynamic content). Mapped card and button triggers inside `ProductsPage.jsx` with event propagation controls.
+

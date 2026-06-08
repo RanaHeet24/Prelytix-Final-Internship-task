@@ -14,6 +14,7 @@ import { addToCart, selectCartItems } from '../features/cart/cartSlice';
 import useDebounce from '../hooks/useDebounce';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
+import ProductDetailsModal from '../components/ProductDetailsModal';
 import { Filter, AlertCircle, Search, ArrowUpDown, PackageOpen } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Audio', 'Accessories', 'Wearables', 'Video'];
@@ -29,6 +30,9 @@ export default function ProductsPage() {
   // Local state for debounced input text binding
   const [searchTerm, setSearchTerm] = useState(searchQuery);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Selected product state for details modal
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Synchronize debounced value to global Redux state filter
   useEffect(() => {
@@ -160,7 +164,12 @@ export default function ProductsPage() {
             const buttonState = getButtonState(product);
             
             return (
-              <Card key={product.id} hoverEffect className="flex flex-col h-full group relative">
+              <Card 
+                key={product.id} 
+                hoverEffect 
+                className="flex flex-col h-full group relative cursor-pointer"
+                onClick={() => setSelectedProduct(product)}
+              >
                 {/* Product Image */}
                 <div className="w-full aspect-[4/3] rounded-xl bg-slate-950 border border-white/5 relative overflow-hidden">
                   <img 
@@ -202,20 +211,48 @@ export default function ProductsPage() {
                     </p>
                   </div>
 
-                  {/* Pricing and Add button */}
-                  <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest block">Price</span>
-                      <span className="text-base font-extrabold text-white">₹{product.price.toFixed(2)}</span>
+                  {/* Pricing and Action Buttons */}
+                  <div className="mt-5 pt-4 border-t border-white/5 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest block">Price</span>
+                        <span className="text-base font-extrabold text-white">₹{product.price.toFixed(2)}</span>
+                      </div>
+                      <span 
+                        className="text-[10px] text-indigo-400 font-semibold tracking-wider hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProduct(product);
+                        }}
+                      >
+                        View Details →
+                      </span>
                     </div>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleAddToCart(product)}
-                      disabled={buttonState.disabled}
-                      className="font-semibold text-xs tracking-wide shadow-none"
-                    >
-                      {buttonState.text}
-                    </Button>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-grow font-semibold text-[11px] tracking-wide"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProduct(product);
+                        }}
+                      >
+                        Details
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product);
+                        }}
+                        disabled={buttonState.disabled}
+                        className="flex-grow font-semibold text-[11px] tracking-wide shadow-none"
+                      >
+                        {buttonState.text}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -235,6 +272,16 @@ export default function ProductsPage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Product Details Dialog Overlay */}
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={handleAddToCart}
+          buttonState={getButtonState(selectedProduct)}
+        />
       )}
     </div>
   );
