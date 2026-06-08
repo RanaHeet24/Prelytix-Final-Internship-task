@@ -2,10 +2,10 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { selectAllProducts, selectSelectedCategory, setCategory } from '../features/products/productsSlice';
-import { addToCart } from '../features/cart/cartSlice';
+import { addToCart, selectCartItems } from '../features/cart/cartSlice';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import { Star, Filter, Heart } from 'lucide-react';
+import { Star, Filter, Heart, AlertCircle } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Audio', 'Accessories', 'Wearables', 'Video'];
 
@@ -13,16 +13,57 @@ export default function ProductsPage() {
   const dispatch = useDispatch();
   const products = useSelector(selectAllProducts);
   const selectedCategory = useSelector(selectSelectedCategory);
+  const cartItems = useSelector(selectCartItems);
 
   const filteredProducts = selectedCategory === 'All'
     ? products
     : products.filter(p => p.category === selectedCategory);
 
   const handleAddToCart = (product) => {
+    const cartItem = cartItems.find(item => item.id === product.id);
+    const cartQty = cartItem ? cartItem.quantity : 0;
+
+    if (product.stock <= 0) {
+      toast.error(`Sorry, ${product.name} is currently out of stock.`, {
+        icon: <AlertCircle className="text-rose-500 w-5 h-5" />
+      });
+      return;
+    }
+
+    if (cartQty >= 10) {
+      toast.warn(`You cannot purchase more than 10 units of ${product.name}.`, {
+        icon: '⚠️'
+      });
+      return;
+    }
+
+    if (cartQty >= product.stock) {
+      toast.warn(`Only ${product.stock} units of ${product.name} are available in stock.`, {
+        icon: '⚠️'
+      });
+      return;
+    }
+
     dispatch(addToCart(product));
     toast.success(`${product.name} added to your cart!`, {
       icon: '🛒'
     });
+  };
+
+  const getButtonState = (product) => {
+    const cartItem = cartItems.find(item => item.id === product.id);
+    const cartQty = cartItem ? cartItem.quantity : 0;
+
+    if (product.stock <= 0) {
+      return { disabled: true, text: 'Out of Stock' };
+    }
+    if (cartQty >= 10) {
+      return { disabled: true, text: 'Max Limit (10)' };
+    }
+    if (cartQty >= product.stock) {
+      return { disabled: true, text: 'Limit Reached' };
+    }
+    return { disabled: false, text: 'Add to Cart' };
   };
 
   return (
@@ -66,56 +107,71 @@ export default function ProductsPage() {
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {filteredProducts.map(product => (
-          <Card key={product.id} hoverEffect className="flex flex-col h-full group relative">
-            {/* Visual gradient backdrop representing the product image */}
-            <div className={`w-full aspect-[4/3] rounded-xl bg-gradient-to-br ${product.gradient} p-8 flex items-center justify-center relative overflow-hidden`}>
-              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="text-white font-extrabold text-2xl tracking-wider drop-shadow-lg transform group-hover:scale-105 transition-transform duration-300">
-                {product.name.split(' ').map(w => w[0]).join('')}
-              </span>
-              <span className="absolute top-3 left-3 bg-black/35 backdrop-blur-md text-[10px] font-bold text-slate-200 px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                {product.category}
-              </span>
-              <button className="absolute top-3 right-3 p-2 rounded-lg bg-black/35 backdrop-blur-md text-slate-400 hover:text-rose-400 transition-colors">
-                <Heart className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Product details */}
-            <div className="mt-5 flex-grow flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-100 text-lg group-hover:text-indigo-300 transition-colors">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center space-x-1 text-amber-400">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span className="text-xs font-bold">{product.rating}</span>
+        {filteredProducts.map(product => {
+          const buttonState = getButtonState(product);
+          
+          return (
+            <Card key={product.id} hoverEffect className="flex flex-col h-full group relative">
+              {/* Actual Image representation */}
+              <div className="w-full aspect-[4/3] rounded-xl bg-slate-950 border border-white/5 relative overflow-hidden">
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-[10px] font-bold text-slate-200 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                  {product.category}
+                </span>
+                
+                {product.stock <= 0 && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center">
+                    <span className="bg-rose-500/15 border border-rose-500/30 text-rose-400 font-bold text-xs tracking-widest uppercase px-3 py-1.5 rounded-lg">
+                      Out of Stock
+                    </span>
                   </div>
-                </div>
-                <p className="text-slate-400 text-xs leading-relaxed line-clamp-2">
-                  {product.description}
-                </p>
+                )}
               </div>
 
-              {/* Price and Add button */}
-              <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest block">Price</span>
-                  <span className="text-xl font-extrabold text-white">${product.price.toFixed(2)}</span>
+              {/* Product details */}
+              <div className="mt-5 flex-grow flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-100 text-base group-hover:text-indigo-300 transition-colors">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-center space-x-1 text-slate-500 text-xs">
+                      <span>Stock:</span>
+                      <span className={`font-semibold ${product.stock > 0 ? 'text-slate-300' : 'text-rose-400'}`}>
+                        {product.stock}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-slate-400 text-xs leading-relaxed line-clamp-2">
+                    {product.name} premium peripherals custom built for professional workstations. Made with precision tooling and high-grade materials.
+                  </p>
                 </div>
-                <Button 
-                  size="sm" 
-                  onClick={() => handleAddToCart(product)}
-                  className="font-semibold text-xs tracking-wide shadow-none"
-                >
-                  Add to Cart
-                </Button>
+
+                {/* Price and Add button */}
+                <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest block">Price</span>
+                    <span className="text-base font-extrabold text-white">${product.price.toFixed(2)}</span>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleAddToCart(product)}
+                    disabled={buttonState.disabled}
+                    className="font-semibold text-xs tracking-wide shadow-none"
+                  >
+                    {buttonState.text}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

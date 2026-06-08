@@ -1,8 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { MOCK_PRODUCTS } from '../../data/products';
+import productsData from '../../data/products.json';
 
 const initialState = {
-  items: MOCK_PRODUCTS,
+  items: productsData,
   loading: false,
   error: null,
   selectedCategory: 'All',
@@ -15,27 +15,10 @@ const productsSlice = createSlice({
     setCategory: (state, action) => {
       state.selectedCategory = action.payload;
     },
-    // Skeleton placeholder for fetching products
-    fetchProductsStart: (state) => {
-      state.loading = true;
-    },
-    fetchProductsSuccess: (state, action) => {
-      state.loading = false;
-      state.items = action.payload;
-    },
-    fetchProductsFailure: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-    }
   },
 });
 
-export const { 
-  setCategory, 
-  fetchProductsStart, 
-  fetchProductsSuccess, 
-  fetchProductsFailure 
-} = productsSlice.actions;
+export const { setCategory } = productsSlice.actions;
 
 export const selectAllProducts = (state) => state.products.items;
 export const selectSelectedCategory = (state) => state.products.selectedCategory;

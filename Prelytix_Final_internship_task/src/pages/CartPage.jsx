@@ -8,14 +8,15 @@ import {
   selectCartPromo, 
   selectCartDiscount,
   removeFromCart, 
-  updateQuantity, 
+  incrementQuantity,
+  decrementQuantity,
   applyPromoCode 
 } from '../features/cart/cartSlice';
 import { ROUTES } from '../constants/routes';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
 import Input from '../components/UI/Input';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, Ticket } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, Ticket, Flame } from 'lucide-react';
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -38,10 +39,21 @@ export default function CartPage() {
     }
   };
 
-  const handleUpdateQty = (id, currentQty, amount) => {
-    const nextQty = currentQty + amount;
-    if (nextQty < 1) return;
-    dispatch(updateQuantity({ id, quantity: nextQty }));
+  const handleIncrement = (id, currentQty, stock, name) => {
+    if (currentQty >= 10) {
+      toast.warn(`Maximum limit of 10 items reached for ${name}.`);
+      return;
+    }
+    if (currentQty >= stock) {
+      toast.warn(`Cannot add more. Only ${stock} items are in stock.`);
+      return;
+    }
+    dispatch(incrementQuantity(id));
+  };
+
+  const handleDecrement = (id, currentQty) => {
+    if (currentQty <= 1) return;
+    dispatch(decrementQuantity(id));
   };
 
   const handleRemoveItem = (id, name) => {
@@ -86,12 +98,24 @@ export default function CartPage() {
             <Card key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 px-5">
               {/* Product Badge / Name */}
               <div className="flex items-center space-x-4">
-                <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${item.gradient || 'from-indigo-500 to-purple-600'} flex items-center justify-center text-white text-sm font-extrabold`}>
-                  {item.name.split(' ').map(w => w[0]).join('')}
+                <div className="w-14 h-14 rounded-lg bg-slate-950 border border-white/5 overflow-hidden">
+                  <img 
+                    src={item.image} 
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-100 text-base">{item.name}</h3>
-                  <span className="text-xs text-indigo-400 font-medium">{item.category}</span>
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-bold text-slate-100 text-base">{item.name}</h3>
+                    {item.quantity >= 5 && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                        <Flame className="w-2.5 h-2.5 text-indigo-400" />
+                        Bulk Purchase
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-indigo-400 font-medium block">{item.category}</span>
                 </div>
               </div>
 
@@ -100,15 +124,17 @@ export default function CartPage() {
                 {/* Quantity adjuster */}
                 <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800 rounded-lg p-1.5">
                   <button 
-                    onClick={() => handleUpdateQty(item.id, item.quantity, -1)}
-                    className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-md cursor-pointer transition-colors"
+                    onClick={() => handleDecrement(item.id, item.quantity)}
+                    disabled={item.quantity <= 1}
+                    className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-md cursor-pointer transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
                   <span className="w-8 text-center text-sm font-bold text-slate-200">{item.quantity}</span>
                   <button 
-                    onClick={() => handleUpdateQty(item.id, item.quantity, 1)}
-                    className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-md cursor-pointer transition-colors"
+                    onClick={() => handleIncrement(item.id, item.quantity, item.stock, item.name)}
+                    disabled={item.quantity >= 10 || item.quantity >= item.stock}
+                    className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-md cursor-pointer transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>

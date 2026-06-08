@@ -1,9 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { loadCartState } from '../../services/localStorage';
+
+const persistedState = loadCartState();
 
 const initialState = {
-  items: [], // Structure: { id, name, price, quantity, gradient, category }
-  promoCode: null,
-  discount: 0,
+  items: persistedState.items, // Structure: { id, name, price, quantity, stock, category, image }
+  promoCode: persistedState.promoCode,
+  discount: persistedState.promoCode === 'SMARTCART20' ? 0.20 : 0,
   shippingCost: 15.00,
   taxRate: 0.08, // 8%
 };
@@ -13,27 +16,57 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addToCart: (state, action) => {
-      const existingItem = state.items.find(item => item.id === action.payload.id);
+      const product = action.payload;
+      const existingItem = state.items.find(item => item.id === product.id);
+      
+      // Stock protection validation
+      if (product.stock <= 0) return;
+
       if (existingItem) {
+        // Enforce max quantity limit of 10
+        if (existingItem.quantity >= 10) return;
+        
+        // Enforce stock capacity check
+        if (existingItem.quantity >= product.stock) return;
+
         existingItem.quantity += 1;
       } else {
-        state.items.push({ ...action.payload, quantity: 1 });
+        state.items.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          stock: product.stock,
+          category: product.category,
+          quantity: 1
+        });
       }
     },
     removeFromCart: (state, action) => {
       state.items = state.items.filter(item => item.id !== action.payload);
     },
-    updateQuantity: (state, action) => {
-      const { id, quantity } = action.payload;
+    incrementQuantity: (state, action) => {
+      const id = action.payload;
       const item = state.items.find(item => item.id === id);
       if (item) {
-        item.quantity = Math.max(1, quantity);
+        if (item.quantity < 10 && item.quantity < item.stock) {
+          item.quantity += 1;
+        }
+      }
+    },
+    decrementQuantity: (state, action) => {
+      const id = action.payload;
+      const item = state.items.find(item => item.id === id);
+      if (item) {
+        if (item.quantity > 1) {
+          item.quantity -= 1;
+        }
       }
     },
     applyPromoCode: (state, action) => {
-      state.promoCode = action.payload;
-      // Foundation state placeholder (actual validation could be added in business logic)
-      if (action.payload?.toUpperCase() === 'SMARTCART20') {
+      const code = action.payload;
+      state.promoCode = code;
+      if (code?.toUpperCase() === 'SMARTCART20') {
         state.discount = 0.20; // 20% discount
       } else {
         state.discount = 0;
@@ -50,12 +83,13 @@ const cartSlice = createSlice({
 export const { 
   addToCart, 
   removeFromCart, 
-  updateQuantity, 
+  incrementQuantity, 
+  decrementQuantity, 
   applyPromoCode, 
   clearCart 
 } = cartSlice.actions;
 
-// Selectors
+// Reusable Selectors
 export const selectCartItems = (state) => state.cart.items;
 export const selectCartPromo = (state) => state.cart.promoCode;
 export const selectCartDiscount = (state) => state.cart.discount;
